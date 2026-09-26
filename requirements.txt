@@ -1,7 +1,5 @@
-python-telegram-bot
-requests
-python-dotenv
-aiogram
-aiohttp
-nest_asyncio
-pytz
+python-telegram-bot==22.8
+aiohttp>=3.10,<4
+requests>=2.32,<3
+python-dotenv>=1.0,<2
+pytz>=2024.1

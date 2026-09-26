@@ -6,7 +6,6 @@
 import json
 import asyncio
 import aiohttp
-import nest_asyncio
 from datetime import datetime, timedelta
 from pytz import timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -32,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 # ================= 👑 CONFIG =================
 
-BOT_TOKEN = "8763527274:AAHd9meh2GtgCLewL7Tt6Ju-iH6gBy7iPA8"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8763527274:AAHd9meh2GtgCLewL7Tt6Ju-iH6gBy7iPA8").strip()
 OWNER_IDS = [8069502603]  # Owner IDs: only these IDs control admin/owner commands
 BOT_ENABLED = True
 
@@ -2385,12 +2384,13 @@ async def main():
     
     app.add_handler(ChatMemberHandler(auto_leave, ChatMemberHandler.MY_CHAT_MEMBER))
     
-    # ✅ Start scheduler as a background task
-    asyncio.create_task(scheduler(app))
-
+    # Initialize Telegram before starting background tasks.
     await app.initialize()
     await app.start()
-    await app.updater.start_polling()
+    await app.updater.start_polling(drop_pending_updates=True)
+
+    # Start scheduler only after the Telegram application is ready.
+    asyncio.create_task(scheduler(app))
     
     print("=" * 50)
     print("✅ BOT STARTED SUCCESSFULLY!")
@@ -2416,5 +2416,9 @@ async def main():
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    nest_asyncio.apply()
+    # Do NOT use nest_asyncio here. It can corrupt asyncio task tracking on
+    # newer Python/Render runtimes and cause:
+    # TypeError: cannot create weak reference to 'NoneType' object
+    if not BOT_TOKEN:
+        raise RuntimeError("BOT_TOKEN environment variable is not set")
     asyncio.run(main())
